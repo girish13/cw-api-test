@@ -45,6 +45,14 @@ $app->singleton(
 );
 
 /*
+/-------------------------------------------------------------------------
+/Configuring global configuration file in /vendor/laravel/lumen-framework/config
+/-------------------------------------------------------------------------
+*/
+
+$app->configure('globals');
+
+/*
 |--------------------------------------------------------------------------
 | Register Middleware
 |--------------------------------------------------------------------------
@@ -63,9 +71,9 @@ $app->singleton(
 //     // Laravel\Lumen\Http\Middleware\VerifyCsrfToken::class,
 // ]);
 
-// $app->routeMiddleware([
-
-// ]);
+ $app->routeMiddleware([
+ 	'auth'=>'App\Http\Middleware\AuthMiddleware',
+ ]);
 
 /*
 |--------------------------------------------------------------------------
@@ -95,5 +103,7 @@ $app->singleton(
 $app->group(['namespace' => 'App\Http\Controllers'], function ($app) {
     require __DIR__.'/../app/Http/routes.php';
 });
+
+
 
 return $app;

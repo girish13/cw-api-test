@@ -15,15 +15,20 @@ $app->get('/', function () use ($app) {
     return $app->welcome();
 });
 
-$app->get('test', function() {
-	
-	//$environ = app()->environment();
-	
-	if ($_ENV['APP_ENV']) {
-    // The environment is local
-		return "Hello World";
-	} else {
-		return "Hello World Global";
-	}
 
-});
+
+/*
+/ defining the group for Restaurant APIs
+*/
+$app->group([
+	'prefix'=> config('globals.api_path').'/{restaurant_id}', 
+	'namespace'=>'App\Http\Controllers\Restaurant',
+	'middleware'=>'auth'],
+	function($app) {
+		
+		$app->get('getRestaurant', function($restaurant_id) {
+			return $restaurant_id;
+		});
+
+	});
+
