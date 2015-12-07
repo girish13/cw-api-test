@@ -22,13 +22,9 @@ $app->get('/', function () use ($app) {
 */
 $app->group([
 	'prefix'=> config('globals.api_path').'/{restaurant_id}', 
-	'namespace'=>'App\Http\Controllers\Restaurant',
+	'namespace'=>'App\Http\Controllers',
 	'middleware'=>'auth'],
 	function($app) {
-		
-		$app->get('getRestaurant', function($restaurant_id) {
-			return $restaurant_id;
-		});
-
+		$app->get('RestaurantDisplay', ['uses'=> 'RestaurantDisplay@getRestaurantListView']);
 	});
 

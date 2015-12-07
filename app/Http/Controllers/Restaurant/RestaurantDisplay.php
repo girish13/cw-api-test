@@ -2,10 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\User;
-//use Laravel\Lumen\Routing\Controller as BaseController;
 
-class getRestaurant extends Controller
+//use App\User;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+
+
+use Laravel\Lumen\Routing\Controller as BaseController;
+
+class RestaurantDisplay extends BaseController
 {
     /*
     / Restaurant Display page controller

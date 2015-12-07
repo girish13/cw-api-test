@@ -15,7 +15,9 @@ class AuthMiddleware
      */
     public function handle($request, Closure $next)
     {
+        //echo "hello from middleware beging";
         //blank function right now. needs to filled with auth functions later on.
         return $next($request);
+       //echo "hello from middleware end";
     }
 }
