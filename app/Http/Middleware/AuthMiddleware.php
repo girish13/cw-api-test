@@ -17,7 +17,11 @@ class AuthMiddleware
     {
         //echo "hello from middleware beging";
         //blank function right now. needs to filled with auth functions later on.
-        return $next($request);
+        $response =  $next($request);
+
+        //HACK FOR CROSS SITE TESTING. NEEDS TO BE REMOVED BEFORE GOING LIVE FOR PRODUCTION
+        return $response->header('Access-Control-Allow-Origin','*');
+
        //echo "hello from middleware end";
     }
 }

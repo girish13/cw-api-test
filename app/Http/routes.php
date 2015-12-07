@@ -26,5 +26,11 @@ $app->group([
 	'middleware'=>'auth'],
 	function($app) {
 		$app->get('RestaurantDisplay', ['uses'=> 'RestaurantDisplay@getRestaurantListView']);
+		$app->get('RestaurantDisplay/schedule', ['uses'=> 'RestaurantDisplay@getRestaurantSchedule']);
+		$app->get('RestaurantDisplay/images', ['uses'=> 'RestaurantDisplay@getRestaurantImages']);
+		$app->get('getRestaurantMenu', ['uses'=> 'RestaurantDisplay@getRestaurantMenu']);
+		$app->get('getRestaurantMenu/{package_type}', ['uses'=> 'RestaurantDisplay@getRestaurantMenu']);
+		$app->get('getMenuItem/{menu_id}', ['uses'=> 'RestaurantDisplay@getMenuItem']);
+		$app->get('getMenuItemOptionAndList/{menu_id}/{menu_item_id}', ['uses'=> 'RestaurantDisplay@getMenuItemOptionAndList']);
 	});
 
