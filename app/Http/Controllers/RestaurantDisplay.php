@@ -30,8 +30,8 @@ class RestaurantDisplay extends Controller {
     public function getRestaurantListView($restaurant_id) {
     	
         if (isset($restaurant_id) && is_numeric($restaurant_id)) {
-
-            $restaurant_info = DB::table(config('db_table_names.restaurant_view'))
+j
+            $ = DB::table(config('db_table_names.restaurant_view'))
                             ->select('restaurant_id','name','short_description', 'long_description', 'cuisines','profile_photo',
                                 'avg_rating','review_count','max_package_price','min_package_price',
                                 'min_order_value','min_order_count','total_orders','order_before','cancel_before','locality_id','city_id','state_id')
