@@ -28,9 +28,17 @@ $app->group([
 		$app->get('RestaurantDisplay', ['uses'=> 'RestaurantDisplay@getRestaurantListView']);
 		$app->get('RestaurantDisplay/schedule', ['uses'=> 'RestaurantDisplay@getRestaurantSchedule']);
 		$app->get('RestaurantDisplay/images', ['uses'=> 'RestaurantDisplay@getRestaurantImages']);
+		$app->get('RestaurantDisplay/all', ['uses'=> 'RestaurantDisplay@getAllRestaurants']);
 		$app->get('getRestaurantMenu', ['uses'=> 'RestaurantDisplay@getRestaurantMenu']);
 		$app->get('getRestaurantMenu/{package_type}', ['uses'=> 'RestaurantDisplay@getRestaurantMenu']);
 		$app->get('getMenuItem/{menu_id}', ['uses'=> 'RestaurantDisplay@getMenuItem']);
 		$app->get('getMenuItemOptionAndList/{menu_id}/{menu_item_id}', ['uses'=> 'RestaurantDisplay@getMenuItemOptionAndList']);
 	});
 
+$app->group([
+	'prefix'=> config('globals.api_path').'/', 
+	'namespace'=>'App\Http\Controllers',
+	'middleware'=>'auth'],
+	function($app) {
+		$app->post('getRestaurantList', ['uses'=> 'RestaurantList@getRestaurantList']);
+	});
