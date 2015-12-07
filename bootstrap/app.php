@@ -51,6 +51,7 @@ $app->singleton(
 */
 
 $app->configure('globals');
+$app->configure('db_table_name')
 
 /*
 |--------------------------------------------------------------------------
