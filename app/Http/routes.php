@@ -15,7 +15,9 @@ $app->get('/', function () use ($app) {
     return $app->welcome();
 });
 
-
+$app->get('/test', function () use ($app) {
+    return "Hello World";
+});
 
 /*
 / defining the group for Restaurant APIs
