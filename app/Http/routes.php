@@ -23,18 +23,19 @@ $app->get('/test', function () use ($app) {
 / defining the group for Restaurant APIs
 */
 $app->group([
-	'prefix'=> config('globals.api_path').'/{restaurant_id}', 
+	'prefix'=> config('globals.api_path').'/getRestaurant/{restaurant_id}', 
 	'namespace'=>'App\Http\Controllers',
 	'middleware'=>'auth'],
 	function($app) {
-		$app->get('RestaurantDisplay', ['uses'=> 'RestaurantDisplay@getRestaurantListView']);
-		$app->get('RestaurantDisplay/schedule', ['uses'=> 'RestaurantDisplay@getRestaurantSchedule']);
-		$app->get('RestaurantDisplay/images', ['uses'=> 'RestaurantDisplay@getRestaurantImages']);
-		$app->get('RestaurantDisplay/all', ['uses'=> 'RestaurantDisplay@getAllRestaurants']);
-		$app->get('getRestaurantMenu', ['uses'=> 'RestaurantDisplay@getRestaurantMenu']);
-		$app->get('getRestaurantMenu/{package_type}', ['uses'=> 'RestaurantDisplay@getRestaurantMenu']);
-		$app->get('getMenuItem/{menu_id}', ['uses'=> 'RestaurantDisplay@getMenuItem']);
-		$app->get('getMenuItemOptionAndList/{menu_id}/{menu_item_id}', ['uses'=> 'RestaurantDisplay@getMenuItemOptionAndList']);
+		$app->get('/', ['uses'=> 'RestaurantDisplay@getRestaurantInfo']);
+		$app->get('/schedule', ['uses'=> 'RestaurantDisplay@getRestaurantSchedule']);
+		$app->get('/images', ['uses'=> 'RestaurantDisplay@getRestaurantImages']);
+		$app->get('/menu', ['uses'=> 'RestaurantDisplay@getRestaurantMenu']);
+		$app->get('/menu/{package_type}', ['uses'=> 'RestaurantDisplay@getRestaurantMenu']);
+		$app->get('/menu/{menu_id}/menuItem', ['uses'=> 'RestaurantDisplay@getRestaurantMenuItem']);
+		$app->get('/menu/{menu_id}/menuItem/{menu_item_id}/menuItemOptionCategory', ['uses'=> 'RestaurantDisplay@getMenuItemOptionCategory']);
+		$app->get('/menu/{menu_id}/menuItem/{menu_item_id}/menuItemOptionCategory/{menu_item_option_category}/menuItemOptionList', ['uses'=> 'RestaurantDisplay@getMenuItemOptionList']);
+		//$app->get('/getMenuItemOptionAndList/{menu_id}/{menu_item_id}', ['uses'=> 'RestaurantDisplay@getMenuItemOptionAndList']);$app->get('/menu/{menu_id}/menuItem/{menu_item_id}/menuItemOptionCategory', ['uses'=> 'RestaurantDisplay@getMenuItemOptionCategory']);
 	});
 
 $app->group([
