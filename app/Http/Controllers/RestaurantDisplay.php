@@ -17,9 +17,47 @@ class RestaurantDisplay extends Controller {
     / Restaurant Display page controller
     */
 
+    
+    /*
+    / Check if a menu belong to a particular restaurant
+    / @param: INT $resturant_id, INT $menu_id
+    / return BOOLEAN: true in case the menu belongs to restaurant, else false. 
+    */
+
+    private function checkMenuBelongsRestaurant($restaurant_id, $menu_id) {
+
+        $menu_check = DB::table(config('db_table_names.menu'))
+                                ->where('id','=',$menu_id)
+                                ->where('restaurant_id','=',$restaurant_id)
+                                ->get();
+
+        return (count($menu_check)>0? true : false);        
+
+    }
+
+    
+    /*
+    / Check if a menu_item belong to a particular menu
+    / @param: INT $menu_id, INT $menu_item_id
+    / return BOOLEAN: true in case the menu_item belongs to restaurant, else false.
+    */
+
+    private function checkMenuItemBelongsMenu($menu_id, $menu_item_id) {
+
+        $menu_item_check = DB::table(config('db_table_names.menu_item'))
+                        ->where('id','=',$menu_item_id)
+                        ->where('menu_id','=',$menu_id)
+                        ->get();
+
+        return (count($menu_item_check)>0? true : false);      
+
+    }
+
+
+   
     /*
     / Send the basic information of the Restaurant (restaurant_id)
-    / @param int $restaurant_id passed in the url as config('globals.api_path')/{restaurant_id}/RestaurantDisplay
+    / @param int $restaurant_id
     / @return JSON of restaurant_view row
     / 
     */
@@ -56,9 +94,10 @@ class RestaurantDisplay extends Controller {
 
     }
 
+   
     /*
     / Send the day wise schedule of the Restaurant (restaurant_id)
-    / @param int $restaurant_id passed in the url as config('globals.api_path')/{restaurant_id}/RestaurantDisplay/schedule
+    / @param int $restaurant_id
     / @return JSON of scheule row(s) - One row per day of the week with 'open' flag, 'open_time','close_time'
     / NOTE: 'day' defined as enum: 'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'
     */
@@ -90,9 +129,10 @@ class RestaurantDisplay extends Controller {
 
     }
 
+   
     /*
     / Send an array of relative URI of  images  for the given Restaurant (restaurant_id)
-    / @param int $restaurant_id passed in the url as config('globals.api_path')/{restaurant_id}/RestaurantDisplay/images
+    / @param int $restaurant_id
     / @return JSON of image ABSOLUTE URI(s) with Title and description
     */
 
@@ -133,14 +173,12 @@ class RestaurantDisplay extends Controller {
     }
 
 
-
     /*
     / Get the menu's associated with a particular restaurant. 
-    / @param int $restaurant_id (passed in the url as config('globals.api_path')/{restaurant_id}/getRestaurantMenu/{Package_Type})
+    / @param int $restaurant_id
     / @param $package_type:'all' or 'package' or 'a-la-carte' depending on type of menu needed.
     / @return JSON array of menus with matching $restaurant_id
     */
-
 
     public function getRestaurantMenu($restaurant_id, $package_type='all') {
        
@@ -194,9 +232,10 @@ class RestaurantDisplay extends Controller {
        
     }
 
+   
     /*
     / Get the menu items associated with a particular menu. 
-    / @param int $menu_id (passed in the url as config('globals.api_path')/{restaurant_id}/getMenuItem/{Menu_id})
+    / @param int $menu_id
     / @return JSON array of menus items with matching $menu_id
     */
 
@@ -263,10 +302,11 @@ class RestaurantDisplay extends Controller {
         }
     }
 
+   
     /*
-    / Get the menu items options and there list associated with a particular menu item. 
-    / @param int $menu_item_id (passed in the url as config('globals.api_path')/{restaurant_id}/getMenuItem/{Menu_id}/{menu_item_id})
-    / @return JSON array of menus items options and the lists with matching $menu_item_id
+    / Get the menu items option categoes list associated with a particular menu item. 
+    / @param int $restaurant_id, int $menu_id, int $menu_item_id
+    / @return JSON array of menus items option categories
     */
 
     public function getMenuItemOptionCategory ($restaurant_id, $menu_id, $menu_item_id) {
@@ -356,6 +396,13 @@ class RestaurantDisplay extends Controller {
 
         }
     }
+
+  
+    /*
+    / Get the menu items options list associated with a particular menu item category. 
+    / @param int $restaurant_id, int $menu_id, int $menu_item_id, int menu_item_option_category
+    / @return JSON array of menus items option list
+    */
 
     public function getMenuItemOptionList ($restaurant_id, $menu_id, $menu_item_id, $menu_item_option_category) {
         if (isset($restaurant_id) && is_numeric($restaurant_id)) {
@@ -473,32 +520,4 @@ class RestaurantDisplay extends Controller {
         }
     }
 
-/*
-    public function getMenuItemOptionAndList ($restaurant_id, $menu_id, $menu_item_id) {
-        if (isset($menu_item_id) && is_numeric($menu_item_id)) {
-
-            $menu_item_options = DB::table(config('db_table_names.menu_item_option'))
-                            ->select(config('db_table_names.menu_item_option').'.id as menu_item_option_id','menu_item_id',config('db_table_names.menu_item_option').'.name as menu_item_option_name','description','max_choice','min_choice','paid as isPaid','price',config('db_table_names.menu_item_option_list').'.name as menu_item_option_list_name',config('db_table_names.menu_item_option_list').'.id as menu_item_option_list_id')
-                            ->join(config('db_table_names.menu_item_option_list'),config('db_table_names.menu_item_option').'.id','=', config('db_table_names.menu_item_option_list').'.menu_item_option_id')
-                            ->where('menu_item_id',$menu_item_id)
-                            ->get();
-
-            if (count($menu_item_options)) {
-              //Check if the any data was matched.
-              return response()->json($menu_item_options);   
-            } 
-            else {
-                //Log error in case of empty query
-                Log::error('Failed getMenuItemOptionAndList. No record found in menu_item_option table.',['menu_id'=>$restaurant_id]);
-                return response()->json(['Error' => config('globals.error_msg')]);        
-          }
-               
-        }
-        else {
-            Log::error('Failed getMenuItemOptionAndList. menu_item_id is not set or not numeric.',['menu_id'=>$restaurant_id]);
-            return response()->json(['Error' => config('globals.error_msg')]);            
-        }
-
-    }
-*/
 }

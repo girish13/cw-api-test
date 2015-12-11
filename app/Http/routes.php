@@ -43,5 +43,5 @@ $app->group([
 	'namespace'=>'App\Http\Controllers',
 	'middleware'=>'auth'],
 	function($app) {
-		$app->post('getRestaurantList', ['uses'=> 'RestaurantList@getRestaurantList']);
+		$app->post('getRestaurantList', ['uses'=> 'RestaurantList@getRestaurantIdList']);
 	});
