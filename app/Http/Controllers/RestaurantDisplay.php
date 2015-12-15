@@ -174,6 +174,138 @@ class RestaurantDisplay extends Controller {
 
 
     /*
+    / Send an array reviews and ratings  for the given Restaurant (restaurant_id)
+    / @param int $restaurant_id
+    / @return JSON of restaurant reviews along with customer name, customer locality name and customer customer city name
+    */
+
+    public function getRestaurantReview($restaurant_id) {
+        
+        if (isset($restaurant_id) && is_numeric($restaurant_id)) {
+
+            $restaurant_info = DB::table(config('db_table_names.restaurant_review'))
+                            ->select(config('db_table_names.restaurant_review').'.id', config('db_table_names.restaurant_review').'.restaurant_id', 
+                                config('db_table_names.restaurant_review').'.customer_id', config('db_table_names.restaurant_review').'.rating',
+                                config('db_table_names.restaurant_review').'.title', config('db_table_names.restaurant_review').'.body',
+                                config('db_table_names.customer').'.fname as customer_fname',config('db_table_names.customer').'.lname as cusomer_lname',
+                                config('db_table_names.locality').'.name as locality_name',config('db_table_names.city').'.name as city_name', 
+                                config('db_table_names.locality').'.id as locality_id', config('db_table_names.city').'.id as city_id')
+                            ->join(config('db_table_names.customer'), config('db_table_names.customer').'.id','=',config('db_table_names.restaurant_review').'.customer_id')
+                            ->join(config('db_table_names.locality'), config('db_table_names.locality').'.id','=',config('db_table_names.customer').'.locality_id')
+                            ->join(config('db_table_names.city'), config('db_table_names.city').'.id','=',config('db_table_names.customer').'.city_id')
+                            ->where(config('db_table_names.restaurant_review').'.restaurant_id',$restaurant_id)
+                            ->where(config('db_table_names.restaurant_review').'.title','!=','')
+                            ->where(config('db_table_names.restaurant_review').'.body','!=','')
+                            ->get();
+
+            if (count($restaurant_info)) {
+              //Check if the any data was matched.
+                
+                /*foreach ($restaurant_info as $info_item) {
+                    //Append storage end point to each image
+                    $info_item['photo_address'] = config('globals.storage_endpoint').$info_item['photo_address'];
+                }
+                */
+
+                return response()->json($restaurant_info);   
+            } 
+            else {
+                //Log error in case of empty query (no match found with current restaurant_id)
+                Log::error('Failed  '.__METHOD__.'. No record found in restaurant_review table.',['restaurant_id'=>$restaurant_id]);
+                return response()->json(['Error' => config('globals.error_msg')]);        
+          }
+             
+       
+        }
+        else {
+            //Log error in case restaurant_id is blank or non-numeric
+            Log::error('Failed '.__METHOD__.'. restaurant_id is not set or not numeric.',['restaurant_id'=>$restaurant_id]);
+            return response()->json(['Error' => config('globals.error_msg')]);            
+        }
+
+    }
+
+
+
+
+
+    /*
+    / Send the vat_rate, service_tax_rate, service_charge_rate for the given Restaurant (restaurant_id)
+    / @param int $restaurant_id
+    / @return JSON of vat_rate, service_tax_rate, service_charge_rate
+    */
+
+    public function getRestaurantTaxInfo($restaurant_id) {
+        
+        if (isset($restaurant_id) && is_numeric($restaurant_id)) {
+
+            $restaurant_info = DB::table(config('db_table_names.restaurant'))
+                            ->select(DB::raw('ROUND(vat_rate,2) as vat_rate, ROUND(service_tax_rate,2) as service_tax_rate, ROUND(service_charge_rate,2) as service_charge_rate'))
+                            ->where('id',$restaurant_id)
+                            ->get();
+
+            if (count($restaurant_info)) {
+              //Check if the any data was matched.
+                return response()->json($restaurant_info);   
+            } 
+            else {
+                //Log error in case of empty query (no match found with current restaurant_id)
+                Log::error('Failed  '.__METHOD__.'. No record found in restaurant table.',['restaurant_id'=>$restaurant_id]);
+                return response()->json(['Error' => config('globals.error_msg')]);        
+          }
+             
+       
+        }
+        else {
+            //Log error in case restaurant_id is blank or non-numeric
+            Log::error('Failed '.__METHOD__.'. id is not set or not numeric.',['restaurant_id'=>$restaurant_id]);
+            return response()->json(['Error' => config('globals.error_msg')]);            
+        }
+
+    }
+
+
+
+    public function fix_filter_list($restaurant_id) {
+        
+        if (isset($restaurant_id) && is_numeric($restaurant_id)) {
+
+            $filter_list = DB::table(config('db_table_names.filter'))
+                            ->select('filter_list_id')
+                            ->where('restaurant_id',$restaurant_id)
+                            ->get();
+
+            if (count($filter_list)) {
+              //Check if the any data was matched.
+                $result = array();
+                foreach ($filter_list as $filter_value) {
+                    array_push($result, (int)$filter_value->filter_list_id);
+                }
+                $result_unique=array_unique($result);
+                asort($result_unique,1);
+                DB::table(config('db_table_names.restaurant_view'))
+                    ->where('restaurant_id', $restaurant_id)
+                    ->update(['filter_list' => implode(",",$result_unique)]);
+            } 
+            else {
+                //Log error in case of empty query (no match found with current restaurant_id)
+                Log::error('Failed  '.__METHOD__.'. No record found in restaurant table.',['restaurant_id'=>$restaurant_id]);
+                return response()->json(['Error' => config('globals.error_msg')]);        
+          }
+             
+       
+        }
+        else {
+            //Log error in case restaurant_id is blank or non-numeric
+            Log::error('Failed '.__METHOD__.'. id is not set or not numeric.',['restaurant_id'=>$restaurant_id]);
+            return response()->json(['Error' => config('globals.error_msg')]);            
+        }
+
+    }
+
+
+
+    /*
     / Get the menu's associated with a particular restaurant. 
     / @param int $restaurant_id
     / @param $package_type:'all' or 'package' or 'a-la-carte' depending on type of menu needed.

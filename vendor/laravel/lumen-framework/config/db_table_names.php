@@ -18,6 +18,7 @@ return [
 'restaurant_view' => 'restaurant_view',
 'restaurant_images' => 'restaurant_images',
 'restaurant_schedule' => 'restaurant_schedule',
+'restaurant_review' => 'restaurant_review',
 'menu'=>'menu',
 'menu_item'=>'menu_item',
 'menu_item_option_category' => 'menu_item_option_category',

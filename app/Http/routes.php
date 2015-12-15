@@ -31,6 +31,9 @@ $app->group([
 		$app->get('/schedule', ['uses'=> 'RestaurantDisplay@getRestaurantSchedule']);
 		$app->get('/images', ['uses'=> 'RestaurantDisplay@getRestaurantImages']);
 		$app->get('/menu', ['uses'=> 'RestaurantDisplay@getRestaurantMenu']);
+		$app->get('/tax', ['uses'=> 'RestaurantDisplay@getRestaurantTaxInfo']);
+		$app->get('/fix_filter_list', ['uses'=> 'RestaurantDisplay@fix_filter_list']);
+		$app->get('/review', ['uses'=> 'RestaurantDisplay@getRestaurantReview']);
 		$app->get('/menu/{package_type}', ['uses'=> 'RestaurantDisplay@getRestaurantMenu']);
 		$app->get('/menu/{menu_id}/menuItem', ['uses'=> 'RestaurantDisplay@getRestaurantMenuItem']);
 		$app->get('/menu/{menu_id}/menuItem/{menu_item_id}/menuItemOptionCategory', ['uses'=> 'RestaurantDisplay@getMenuItemOptionCategory']);
@@ -39,9 +42,34 @@ $app->group([
 	});
 
 $app->group([
+	'prefix'=> config('globals.api_path').'/getLocation', 
+	'namespace'=>'App\Http\Controllers',
+	'middleware'=>'auth'],
+	function($app) {
+		$app->get('/states', ['uses'=> 'LocationData@getStates']);
+		$app->get('/state/{state_id}/cities', ['uses'=> 'LocationData@getCities']);
+		$app->get('/state/{state_id}/city/{city_id}/localities', ['uses'=> 'LocationData@getLocalities']);
+		//$app->get('/getMenuItemOptionAndList/{menu_id}/{menu_item_id}', ['uses'=> 'RestaurantDisplay@getMenuItemOptionAndList']);$app->get('/menu/{menu_id}/menuItem/{menu_item_id}/menuItemOptionCategory', ['uses'=> 'RestaurantDisplay@getMenuItemOptionCategory']);
+	});
+
+
+$app->group([
 	'prefix'=> config('globals.api_path').'/', 
 	'namespace'=>'App\Http\Controllers',
 	'middleware'=>'auth'],
 	function($app) {
-		$app->post('getRestaurantList', ['uses'=> 'RestaurantList@getRestaurantIdList']);
+		$app->post('getRestaurantList', ['uses'=> 'RestaurantList@getRestaurantList']);
+		$app->get('getRestaurantList', ['uses'=> 'RestaurantList@getRestaurantList']);
 	});
+
+
+$app->group([
+	'prefix'=> config('globals.api_path').'/getFilters', 
+	'namespace'=>'App\Http\Controllers',
+	'middleware'=>'auth'],
+	function($app) {
+		$app->get('/', ['uses'=> 'getFilters@getAllFilters']);
+		$app->get('/getTypes', ['uses'=> 'getFilters@getAllFilterTypes']);
+		$app->get('/getFilterByType/{filter_type}', ['uses'=> 'getFilters@getAllFiltersByType']);
+	});
+
