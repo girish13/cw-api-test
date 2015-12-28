@@ -6,6 +6,8 @@ The file will contain all environment level variables.
 */
 
 return [
+
+/* database table names parameters*/
 'state' => 'state',
 'city' => 'city',
 'locality' => 'locality',

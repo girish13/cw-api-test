@@ -73,3 +73,22 @@ $app->group([
 		$app->get('/getFilterByType/{filter_type}', ['uses'=> 'getFilters@getAllFiltersByType']);
 	});
 
+$app->group([
+	'prefix'=> config('globals.api_path').'/order', 
+	'namespace'=>'App\Http\Controllers',
+	'middleware'=>'auth'],
+	function($app) {
+		$app->post('/', ['uses'=> 'order@validateOrder']);
+
+	});
+
+
+$app->group([
+	'prefix'=> config('globals.api_path').'/util', 
+	'namespace'=>'App\Http\Controllers',
+	'middleware'=>'auth'],
+	function($app) {
+		$app->get('/getOrderTimeList', ['uses'=> 'cwUtil@getOrderTimeList']);
+	});
+
+

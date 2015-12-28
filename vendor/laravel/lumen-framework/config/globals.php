@@ -11,4 +11,10 @@ return [
 'time_zone' => 'Asia/Calcutta',
 'storage_endpoint' => 'www.wesx.com/images/',
 'list_page_size'=>10,
+
+/* operating time parameters */
+
+'first_order_time'=>'10:00 am',
+'last_order_time'=>'10:00 pm',
+
 ];

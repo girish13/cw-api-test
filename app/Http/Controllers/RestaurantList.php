@@ -166,7 +166,7 @@ class RestaurantList extends Controller {
 		/ Request object with - Locality_id, date, time, pax, sort(optional), page(optional)
 		/ @param(inside request) - locality_id: numeric ID
 		/ @param(inside request) - date: YYYY/MM/DD
-		/ @param(inside request) - time: hh/mm (24 Hours)
+		/ @param(inside request) - time: hh/mm A (12 Hours)
 		/ @param(inside request) - pax: INT (less than 50)
 		/ @param(inside request) - sort: 'popularity', 'rating', 'price-low','price-high'
 		/ @param(inside request) - page: INT (start from 1) 
@@ -184,7 +184,7 @@ class RestaurantList extends Controller {
 
 			if ($request->has('locality_id') && $request->has('date') && $request->has('time') && $request->has('pax')) {
 
-				$date = date_create_from_format('Y#m#d H#i', $request->input('date').' '.$request->input('time'));
+				$date = date_create_from_format('Y#m#d h#i A', $request->input('date').' '.$request->input('time'));
 
 				
 				//Scope does not permit access in nested DB Facade. Hence accessing it as GLOBALS
@@ -208,7 +208,6 @@ class RestaurantList extends Controller {
 					if ($request->has('price-max')) $restaurant_query->where(config('db_table_names.restaurant_view').'.max_package_price','<=',$request->input('price-max'));
 					if ($request->has('price-min')) $restaurant_query->where(config('db_table_names.restaurant_view').'.min_package_price','>=',$request->input('price-min'));
 					$restaurant_list=$restaurant_query->get();
-					echo count($restaurant_list);
 					
 					$restaurant_id_set = array();	//carry the eligible restaurant IDs which fullfill the search criteria.
 
@@ -219,17 +218,13 @@ class RestaurantList extends Controller {
 						sort($filter_list);
 						
 						if (count($filter_list)) {
-						echo count($filter_list).':filters';
 						foreach ($restaurant_list as $list) {
 							//array_push($restaurant_id_set, $list->restaurant_id);
 							$filter_curr = array();
 								if(isset($list->filter_list)) {
 									$filter_curr=explode(",",$list->filter_list);
 									sort($filter_curr);
-									echo count($filter_curr)."filter curr value \n";
-									echo count(array_intersect($filter_curr, $filter_list)).'in intersect';
-									if (array_intersect($filter_curr, $filter_list) === $filter_list) {
-										echo "in array push";
+									if (implode(",",array_intersect($filter_curr, $filter_list)) == implode(",",$filter_list)) {
 										array_push($restaurant_id_set, $list->restaurant_id);
 									}
 								}
@@ -240,9 +235,7 @@ class RestaurantList extends Controller {
 								array_push($restaurant_id_set, $list->restaurant_id);
 							}
 						}
-					
-					echo "set:".count($restaurant_id_set);
-						
+											
 					if ($request->has('page') && is_numeric($request->input('page')) && $request->has('sort')) {
 						$restaurant_info = $this->getRestaurantListViewByPage($restaurant_id_set, $request->input('page'), $request->input('sort'));
 					}
