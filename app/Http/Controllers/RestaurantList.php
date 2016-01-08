@@ -36,14 +36,14 @@ class RestaurantList extends Controller {
 												->get();
 
 			foreach ($locality_id_data_set as $id) {
-				if ($id->locality_id_1 != $locality_id) array_push($locality_id_set, $id->locality_id_1);
-				else if ($id->locality_id_2 != $locality_id) array_push($locality_id_set, $id->locality_id_2);
+				if ($id->locality_id_1 != $locality_id) array_push($locality_id_set, (int)$id->locality_id_1);
+				else if ($id->locality_id_2 != $locality_id) array_push($locality_id_set, (int)$id->locality_id_2);
 			}
 
 			array_push($locality_id_set, (int)$locality_id); //type conversion to int to ensure uniformity in array elements. POST parameters are string by default
-			array_unique($locality_id_set); //Not needed, but extra precautions.
-			//echo count($locality_id_set);
-			return (array)$locality_id_set;
+			$result=array_unique($locality_id_set); //Not needed, but extra precautions.
+			asort($result); //Not needed, for readability.
+			return (array)$result;
 		}
 
 
@@ -62,12 +62,12 @@ class RestaurantList extends Controller {
 				if (isset($restaurant_id) && is_numeric($restaurant_id)) {
 
 						$restaurant_info = DB::table(config('db_table_names.restaurant_view'))
-														->select('restaurant_id',config('db_table_names.restaurant_view').'.name','short_description', 'cuisines','profile_photo',
+														->select(config('db_table_names.restaurant_view').'.id as id',config('db_table_names.restaurant_view').'.name','short_description', 'cuisines','profile_photo',
 																'avg_rating','review_count','max_package_price','min_package_price',
 																'min_order_value','min_order_count','total_orders','order_before','cancel_before',config('db_table_names.locality').'.name as locality_name',config('db_table_names.city').'.name as city_name')
 														->join(config('db_table_names.locality'), config('db_table_names.locality').'.id','=',config('db_table_names.restaurant_view').'.locality_id')
 														->join(config('db_table_names.city'), config('db_table_names.city').'.id','=',config('db_table_names.restaurant_view').'.city_id')
-														->where('restaurant_id',$restaurant_id)
+														->where('id',$restaurant_id)
 														->get();
 
 						if (count($restaurant_info)) {
@@ -131,14 +131,14 @@ class RestaurantList extends Controller {
 				if (isset($restaurant_id) && count($restaurant_id)) {
 
 						$restaurant_info = DB::table(config('db_table_names.restaurant_view'))
-														->select('restaurant_id',config('db_table_names.restaurant_view').'.name','short_description', 'cuisines','profile_photo',
+														->select(config('db_table_names.restaurant_view').'.id as id',config('db_table_names.restaurant_view').'.name','short_description', 'cuisines','profile_photo',
 																'avg_rating','review_count','max_package_price','min_package_price',
 																'min_order_value','min_order_count','total_orders','order_before','cancel_before',config('db_table_names.locality').'.name as locality_name',config('db_table_names.city').'.name as city_name')
 														->join(config('db_table_names.locality'), config('db_table_names.locality').'.id','=',config('db_table_names.restaurant_view').'.locality_id')
 														->join(config('db_table_names.city'), config('db_table_names.city').'.id','=',config('db_table_names.restaurant_view').'.city_id')
-														->whereIn('restaurant_id',$restaurant_id)
+														->whereIn(config('db_table_names.restaurant_view').'.id',$restaurant_id)
 														->orderBy($sort_var,$sort_order)
-														->skip((($page-1)*10))
+														->skip((($page-1)*config('globals.list_page_size')))
 														->take(config('globals.list_page_size'))
 														->get();
 
@@ -182,33 +182,45 @@ class RestaurantList extends Controller {
 
 		public function getRestaurantList(Request $request) {
 
-			if ($request->has('locality_id') && $request->has('date') && $request->has('time') && $request->has('pax')) {
+			if ($request->has('locality_id')) {
 
-				$date = date_create_from_format('Y#m#d h#i A', $request->input('date').' '.$request->input('time'));
-
-				
 				//Scope does not permit access in nested DB Facade. Hence accessing it as GLOBALS
 				if (!isset($GLOBALS['requestDay'])) global $requestDay; 
-				$requestDay = $date->format('l');
 				
 				//Get locality_ids which delivery in this area.
 				$locality_id_set = $this->getDeliveryLocalities($request->input('locality_id'));
-				
+
 				if (count($locality_id_set)) {
+					//if Locality_ids exist, fetch eligible restaurants for those localities.
 					$restaurant_query=DB::table(config('db_table_names.restaurant_view'))
-															 ->select(config('db_table_names.restaurant_view').'.restaurant_id','filter_list')
-															 ->join(config('db_table_names.restaurant_schedule'), function ($join) {
-																	$join->on(config('db_table_names.restaurant_schedule').'.restaurant_id','=',config('db_table_names.restaurant_view').'.restaurant_id')
+															 ->select(config('db_table_names.restaurant_view').'.id','filter_list')
+															 ->whereIn('locality_id', $locality_id_set);
+
+
+					if ($request->has('date'))
+						{
+							//If date supplied, get the day of the week on which the order takes place
+							$date = date_create_from_format('Y#m#d', $request->input('date'));
+							$requestDay = $date->format('l');
+
+							//join table to check if restaurant open on the event date.
+							$restaurant_query->join(config('db_table_names.restaurant_schedule'), function ($join) {
+																	$join->on(config('db_table_names.restaurant_schedule').'.restaurant_id','=',config('db_table_names.restaurant_view').'.id')
 																				->where(config('db_table_names.restaurant_schedule').'.days','=', $GLOBALS['requestDay'])
 																				->where(config('db_table_names.restaurant_schedule').'.open','=','1');
-															 })
-															->whereIn('locality_id', $locality_id_set);
+															 });
 
+						}											
 
+					//If price-max paremeter set, apply price max to the list.
 					if ($request->has('price-max')) $restaurant_query->where(config('db_table_names.restaurant_view').'.max_package_price','<=',$request->input('price-max'));
+
+					//If price-min parameter set, apply price min to the list.
 					if ($request->has('price-min')) $restaurant_query->where(config('db_table_names.restaurant_view').'.min_package_price','>=',$request->input('price-min'));
+
+					//Execute query
 					$restaurant_list=$restaurant_query->get();
-					
+
 					$restaurant_id_set = array();	//carry the eligible restaurant IDs which fullfill the search criteria.
 
 					if (count($restaurant_list)) {
@@ -216,7 +228,6 @@ class RestaurantList extends Controller {
 						$filter_list = array();
 						if ($request->has('filters')) $filter_list=explode(',',$request->input('filters'));
 						sort($filter_list);
-						
 						if (count($filter_list)) {
 						foreach ($restaurant_list as $list) {
 							//array_push($restaurant_id_set, $list->restaurant_id);
@@ -225,14 +236,14 @@ class RestaurantList extends Controller {
 									$filter_curr=explode(",",$list->filter_list);
 									sort($filter_curr);
 									if (implode(",",array_intersect($filter_curr, $filter_list)) == implode(",",$filter_list)) {
-										array_push($restaurant_id_set, $list->restaurant_id);
+										array_push($restaurant_id_set, $list->id);
 									}
 								}
 							}
 						}
 						else {
 							foreach ($restaurant_list as $list) {
-								array_push($restaurant_id_set, $list->restaurant_id);
+								array_push($restaurant_id_set, $list->id);
 							}
 						}
 											

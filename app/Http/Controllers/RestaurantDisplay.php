@@ -66,13 +66,24 @@ class RestaurantDisplay extends Controller {
         
         if (isset($restaurant_id) && is_numeric($restaurant_id)) {
 
+            /*
+            / Query to extract from restaurant_View with specified restaurant_id
+            / SELECTS id, name, short_description, long descripiton, cuisines, profile_photo, mast_phpto, avg_rating, review_count, max_package_price, min_package_price, min_order_value,
+            / min_order_count, total_orders, order_before, cancel_before, locality_name, city_name
+            / JOINS ON LOCALITY (to fetch locality.name)
+            / JOIN ON CITY (to feth city.name)
+            / SUBSTITUTES profile_photo in case profile_photo is empty string
+            / SUBSTTITUES mast_photo in case mast_photo is empty string
+            */
             $restaurant_info = DB::table(config('db_table_names.restaurant_view'))
-                            ->select('restaurant_id',config('db_table_names.restaurant_view').'.name','short_description', 'long_description', 'cuisines','profile_photo',
+                            ->select(config('db_table_names.restaurant_view').'.id',config('db_table_names.restaurant_view').'.name','short_description', 'long_description', 'cuisines',
+                                DB::raw('case('.config('db_table_names.restaurant_view').'.profile_photo) when "" then "'.config('globals.img_path').config('globals.default_logo').'" else '.config('db_table_names.restaurant_view').'.profile_photo end as profile_photo'),
+                                DB::raw('case('.config('db_table_names.restaurant_view').'.mast_photo) when "" then "'.config('globals.img_path').config('globals.default_mast').'" else '.config('db_table_names.restaurant_view').'.mast_photo end as mast_photo'),
                                 'avg_rating','review_count','max_package_price','min_package_price', 'min_order_value','min_order_count','total_orders',
                                 'order_before','cancel_before',config('db_table_names.locality').'.name as locality_name',config('db_table_names.city').'.name as city_name')
                             ->join(config('db_table_names.locality'), config('db_table_names.locality').'.id','=',config('db_table_names.restaurant_view').'.locality_id')
                             ->join(config('db_table_names.city'), config('db_table_names.city').'.id','=',config('db_table_names.restaurant_view').'.city_id')
-                            ->where(config('db_table_names.restaurant_view').'.restaurant_id','=',$restaurant_id)
+                            ->where(config('db_table_names.restaurant_view').'.id','=',$restaurant_id)
                             ->get();
 
             if (count($restaurant_info)) {
@@ -134,6 +145,7 @@ class RestaurantDisplay extends Controller {
     / Send an array of relative URI of  images  for the given Restaurant (restaurant_id)
     / @param int $restaurant_id
     / @return JSON of image ABSOLUTE URI(s) with Title and description
+    / THIS IS UNTESTED RIGHT NOW - DUE TO DEPRECATION
     */
 
     public function getRestaurantImages($restaurant_id) {
@@ -183,19 +195,17 @@ class RestaurantDisplay extends Controller {
         
         if (isset($restaurant_id) && is_numeric($restaurant_id)) {
 
+
+
             $restaurant_info = DB::table(config('db_table_names.restaurant_review'))
-                            ->select(config('db_table_names.restaurant_review').'.id', config('db_table_names.restaurant_review').'.restaurant_id', 
+                            ->select(
+                                config('db_table_names.restaurant_review').'.id', config('db_table_names.restaurant_review').'.restaurant_id', 
                                 config('db_table_names.restaurant_review').'.customer_id', config('db_table_names.restaurant_review').'.rating',
                                 config('db_table_names.restaurant_review').'.title', config('db_table_names.restaurant_review').'.body',
-                                config('db_table_names.customer').'.fname as customer_fname',config('db_table_names.customer').'.lname as cusomer_lname',
-                                config('db_table_names.locality').'.name as locality_name',config('db_table_names.city').'.name as city_name', 
-                                config('db_table_names.locality').'.id as locality_id', config('db_table_names.city').'.id as city_id')
+                                config('db_table_names.customer').'.fname as customer_fname',config('db_table_names.customer').'.lname as cusomer_lname')
                             ->join(config('db_table_names.customer'), config('db_table_names.customer').'.id','=',config('db_table_names.restaurant_review').'.customer_id')
-                            ->join(config('db_table_names.locality'), config('db_table_names.locality').'.id','=',config('db_table_names.customer').'.locality_id')
-                            ->join(config('db_table_names.city'), config('db_table_names.city').'.id','=',config('db_table_names.customer').'.city_id')
                             ->where(config('db_table_names.restaurant_review').'.restaurant_id',$restaurant_id)
-                            ->where(config('db_table_names.restaurant_review').'.title','!=','')
-                            ->where(config('db_table_names.restaurant_review').'.body','!=','')
+                            ->where(config('db_table_names.restaurant_review').'.title','<>','')
                             ->get();
 
             if (count($restaurant_info)) {
@@ -283,8 +293,8 @@ class RestaurantDisplay extends Controller {
                 }
                 $result_unique=array_unique($result);
                 asort($result_unique,1);
-                DB::table(config('db_table_names.restaurant_view'))
-                    ->where('restaurant_id', $restaurant_id)
+                DB::table(config('db_table_names.restaurant'))
+                    ->where('id', $restaurant_id)
                     ->update(['filter_list' => implode(",",$result_unique)]);
             } 
             else {

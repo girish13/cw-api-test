@@ -47,9 +47,47 @@ class order extends Controller {
 
 	public function validateOrder(Request $request) {
 		$content = $request->getContent();
-		$temp = json_decode($content, true);
-		$pkges = $temp['1'];
-		print_r($temp);
+		$order = json_decode($content, true);
+		echo count($order);
+		$total_pax=0;
+		// Extract package out of Array
+		for ($x=1; $x<count($order);$x++) {
+			$package = $order[$x];
+			$restaurant_id = $package['0'];
+			$package_id = $package['1'];
+			//TO DO - Check if this restaurant has this package else Error.
+			$menu = $package['2'];
+			$pax = $package['3'];
+			$total_pax+=$pax;
+			$menu_item_ids = array_keys($menu);
+			//print_r($menu_item_ids);
+			
+			foreach($menu_item_ids as $menu_item_id) {
+				//To DO  - Check if menu_item belongs to menu
+				//INSERT item_id and package_id
+				$menu_item_options_cat = $menu[$menu_item_id];
+				$menu_item_options_cat_ids=array_keys($menu_item_options_cat);
+				print_r($menu_item_options_cat_ids);
+				
+				foreach($menu_item_options_cat_ids as $menu_item_options_cat_id) {
+
+					//INSERT menu_item_options_cat_id and menu_item_id
+					$menu_item_options_list=$menu_item_options_cat[$menu_item_options_cat_id];
+					//print_r($menu_item_options_cat_id);
+					for ($y=0; $y<count($menu_item_options_list); $y++) {
+						//print_r($menu_item_options_list[$y]);
+						//Insert $menu_item_options_list[$y]['id'] and $menu_item_options_cat_id
+					}
+				}
+				//print_r($menu_item_option);
+			}
+
+			//print_r($package);
+
+		}
+
+		//$pkges = $temp['1'];
+		//print_r(array_keys($pkges[2]));
 	}
 
 }
