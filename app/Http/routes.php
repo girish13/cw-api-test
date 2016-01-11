@@ -17,6 +17,7 @@ $app->get('/', function () use ($app) {
 
 $app->get('/test', function () use ($app) {
     return "Hello World";
+
 });
 
 /*

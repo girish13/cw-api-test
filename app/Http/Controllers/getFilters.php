@@ -70,9 +70,8 @@ class getFilters extends Controller {
 	public function getAllFiltersByType($filter_type) {
       
 		if (isset($filter_type) and !is_null($filter_type)) {
-
 			$filter_type_list = DB::table(config('db_table_names.filter_list'))
-							->where('type','=',$filter_type)
+							->where('type','=',urldecode($filter_type))
 			            ->get();
 
 			if (count($filter_type_list)) {

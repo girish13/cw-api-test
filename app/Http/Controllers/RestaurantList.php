@@ -161,6 +161,49 @@ class RestaurantList extends Controller {
 		}
 
 
+		public function getEligibleFilterTypes($request_filters, $rest_id=0) {
+			
+			//Scope does not permit access in nested DB Facade. Hence accessing it as GLOBALS
+			if (!isset($GLOBALS['restaurant_id_for_filter_eligibilty'])) global $restaurant_id_for_filter_eligibilty;
+			$GLOBALS['restaurant_id_for_filter_eligibilty'] = $rest_id;
+			
+			$filter_list = array();
+			$filter_list = explode(',', $request_filters);
+
+			$filter_type = array();
+
+
+			if (count($filter_list)) {
+				$query = DB::table(config('db_table_names.filter_list'))
+																					 ->select(DB::raw('DISTINCT '.config('db_table_names.filter_list').'.type as type'))
+
+																					 ->whereIn(config('db_table_names.filter_list').'.id',$filter_list)
+																					 ->orderBy('type','asc');
+				
+				if ($rest_id) {
+					$query->join(config('db_table_names.filter'), function ($join) {
+																				$join->on(config('db_table_names.filter').'.filter_list_id','=',config('db_table_names.filter_list').'.id')	
+																						 ->where(config('db_table_names.filter').'.restaurant_id','=', $GLOBALS['restaurant_id_for_filter_eligibilty']);	
+																			  });
+				}
+
+				$filter_type_result = $query->get();
+
+				if (count($filter_type_result)){
+					foreach ($filter_type_result as $type) {
+						array_push($filter_type, $type->type);
+					}	
+				}
+			}
+			else {
+					Log::error('Failed '.__METHOD__.'. Invalid filter_list',['$request_filters'=>$request_filters, 'rest_id'=>$rest_id]);
+			}
+
+			return $filter_type;
+		}
+
+		
+
 		/*
 		/ Get list of eligible restaurants along with details from which a customer can order in as per the order specification
 		/ Request object with - Locality_id, date, time, pax, sort(optional), page(optional)
@@ -171,8 +214,8 @@ class RestaurantList extends Controller {
 		/ @param(inside request) - sort: 'popularity', 'rating', 'price-low','price-high'
 		/ @param(inside request) - page: INT (start from 1) 
 		/ @paraem(inside request) - filters: comma separate string of FILTER IDs
-		/ @param(inside request) - price-max: INT
-		/ @param(inside request) - price-min: INT
+		/ @param(inside request) - price_max: INT
+		/ @param(inside request) - price_min: INT
 		/ @return  JSON of with sorted array of 10 restaurant_view row ('restaurant_id','name','short_description','cuisines',
 		/'profile_photo','avg_rating','review_count','max_package_price','min_package_price','min_order_value',
 		/'min_order_count','total_order','order_before','cancel_before','locality_id','city_id','state_id') matching the supplied $restaurant_id and $page number
@@ -212,11 +255,11 @@ class RestaurantList extends Controller {
 
 						}											
 
-					//If price-max paremeter set, apply price max to the list.
-					if ($request->has('price-max')) $restaurant_query->where(config('db_table_names.restaurant_view').'.max_package_price','<=',$request->input('price-max'));
+					//If price_max paremeter set, apply price max to the list.
+					if ($request->has('price_max')) $restaurant_query->where(config('db_table_names.restaurant_view').'.max_package_price','<=',$request->input('price_max'));
 
-					//If price-min parameter set, apply price min to the list.
-					if ($request->has('price-min')) $restaurant_query->where(config('db_table_names.restaurant_view').'.min_package_price','>=',$request->input('price-min'));
+					//If price_min parameter set, apply price min to the list.
+					if ($request->has('price_min')) $restaurant_query->where(config('db_table_names.restaurant_view').'.min_package_price','>=',$request->input('price_min'));
 
 					//Execute query
 					$restaurant_list=$restaurant_query->get();
@@ -224,20 +267,12 @@ class RestaurantList extends Controller {
 					$restaurant_id_set = array();	//carry the eligible restaurant IDs which fullfill the search criteria.
 
 					if (count($restaurant_list)) {
-
-						$filter_list = array();
-						if ($request->has('filters')) $filter_list=explode(',',$request->input('filters'));
-						sort($filter_list);
-						if (count($filter_list)) {
-						foreach ($restaurant_list as $list) {
-							//array_push($restaurant_id_set, $list->restaurant_id);
-							$filter_curr = array();
-								if(isset($list->filter_list)) {
-									$filter_curr=explode(",",$list->filter_list);
-									sort($filter_curr);
-									if (implode(",",array_intersect($filter_curr, $filter_list)) == implode(",",$filter_list)) {
-										array_push($restaurant_id_set, $list->id);
-									}
+						
+						if ($request->has('filters')) {
+							$request_filter_types = $this->getEligibleFilterTypes($request->input('filters'));
+							foreach ($restaurant_list as $list) {
+								if (!count(array_diff($request_filter_types,$this->getEligibleFilterTypes($request->input('filters'),$list->id)))) {
+									array_push($restaurant_id_set, $list->id);
 								}
 							}
 						}
@@ -246,7 +281,7 @@ class RestaurantList extends Controller {
 								array_push($restaurant_id_set, $list->id);
 							}
 						}
-											
+				
 					if ($request->has('page') && is_numeric($request->input('page')) && $request->has('sort')) {
 						$restaurant_info = $this->getRestaurantListViewByPage($restaurant_id_set, $request->input('page'), $request->input('sort'));
 					}
