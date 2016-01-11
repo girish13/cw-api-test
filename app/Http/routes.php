@@ -33,7 +33,6 @@ $app->group([
 		$app->get('/images', ['uses'=> 'RestaurantDisplay@getRestaurantImages']);
 		$app->get('/menu', ['uses'=> 'RestaurantDisplay@getRestaurantMenu']);
 		$app->get('/tax', ['uses'=> 'RestaurantDisplay@getRestaurantTaxInfo']);
-		$app->get('/fix_filter_list', ['uses'=> 'RestaurantDisplay@fix_filter_list']);
 		$app->get('/review', ['uses'=> 'RestaurantDisplay@getRestaurantReview']);
 		$app->get('/menu/{package_type}', ['uses'=> 'RestaurantDisplay@getRestaurantMenu']);
 		$app->get('/menu/{menu_id}/menuItem', ['uses'=> 'RestaurantDisplay@getRestaurantMenuItem']);
@@ -90,6 +89,10 @@ $app->group([
 	'middleware'=>'auth'],
 	function($app) {
 		$app->get('/getOrderTimeList', ['uses'=> 'cwUtil@getOrderTimeList']);
+		$app->get('/update_filter_list/{restaurant_id}', ['uses'=> 'cwUtil@update_filter_list']);
+		$app->get('/update_cuisine_list/{restaurant_id}', ['uses'=> 'cwUtil@update_cuisine_list']);
+		$app->get('/update_max_package_price/{restaurant_id}', ['uses'=> 'cwUtil@update_max_package_price']);
+		$app->get('/update_min_package_price/{restaurant_id}', ['uses'=> 'cwUtil@update_min_package_price']);
 	});
 
 

@@ -143,6 +143,17 @@ class RestaurantList extends Controller {
 														->get();
 
 						if (count($restaurant_info)) {
+
+							foreach($restaurant_info as $restaurant) {
+                    
+                if ($restaurant->profile_photo == "") {
+                    $restaurant->profile_photo=config('globals.storage_endpoint').config('globals.restaurant_img_path').config('globals.default_logo');
+                }
+                else {
+                    $restaurant->profile_photo=config('globals.storage_endpoint').config('globals.restaurant_img_path').$restaurant->profile_photo;
+                }
+		          }
+              
 							//Check if the any data was matched.
 							return $restaurant_info;   
 						} 

@@ -76,10 +76,8 @@ class RestaurantDisplay extends Controller {
             / SUBSTTITUES mast_photo in case mast_photo is empty string
             */
             $restaurant_info = DB::table(config('db_table_names.restaurant_view'))
-                            ->select(config('db_table_names.restaurant_view').'.id',config('db_table_names.restaurant_view').'.name','short_description', 'long_description', 'cuisines',
-                                DB::raw('case('.config('db_table_names.restaurant_view').'.profile_photo) when "" then "'.config('globals.img_path').config('globals.default_logo').'" else '.config('db_table_names.restaurant_view').'.profile_photo end as profile_photo'),
-                                DB::raw('case('.config('db_table_names.restaurant_view').'.mast_photo) when "" then "'.config('globals.img_path').config('globals.default_mast').'" else '.config('db_table_names.restaurant_view').'.mast_photo end as mast_photo'),
-                                'avg_rating','review_count','max_package_price','min_package_price', 'min_order_value','min_order_count','total_orders',
+                            ->select(config('db_table_names.restaurant_view').'.id',config('db_table_names.restaurant_view').'.name','short_description', 'long_description', 'cuisines', config('db_table_names.restaurant_view').'.profile_photo',
+                                config('db_table_names.restaurant_view').'.mast_photo', 'avg_rating','review_count','max_package_price','min_package_price', 'min_order_value','min_order_count','total_orders',
                                 'order_before','cancel_before',config('db_table_names.locality').'.name as locality_name',config('db_table_names.city').'.name as city_name')
                             ->join(config('db_table_names.locality'), config('db_table_names.locality').'.id','=',config('db_table_names.restaurant_view').'.locality_id')
                             ->join(config('db_table_names.city'), config('db_table_names.city').'.id','=',config('db_table_names.restaurant_view').'.city_id')
@@ -87,8 +85,26 @@ class RestaurantDisplay extends Controller {
                             ->get();
 
             if (count($restaurant_info)) {
-              //Check if the any data was matched.
-              return response()->json($restaurant_info);   
+
+                foreach($restaurant_info as $restaurant) {
+                    
+                    if ($restaurant->profile_photo == "") {
+                        $restaurant->profile_photo=config('globals.storage_endpoint').config('globals.restaurant_img_path').config('globals.default_logo');
+                    }
+                    else {
+                        $restaurant->profile_photo=config('globals.storage_endpoint').config('globals.restaurant_img_path').$restaurant->profile_photo;
+                    }
+
+                    if ($restaurant->mast_photo == "") {
+                        $restaurant->mast_photo=config('globals.storage_endpoint').config('globals.restaurant_img_path').config('globals.default_mast');
+                    }
+                    else {
+                        $restaurant->mast_photo=config('globals.storage_endpoint').config('globals.restaurant_img_path').$restaurant->mast_photo;
+                    }
+                }
+
+                //Check if the any data was matched.
+                return response()->json($restaurant_info);   
             } 
             else {
                 //Log error in case of empty query(no match found with current restaurant_id)
@@ -275,46 +291,6 @@ class RestaurantDisplay extends Controller {
     }
 
 
-
-    public function fix_filter_list($restaurant_id) {
-        
-        if (isset($restaurant_id) && is_numeric($restaurant_id)) {
-
-            $filter_list = DB::table(config('db_table_names.filter'))
-                            ->select('filter_list_id')
-                            ->where('restaurant_id',$restaurant_id)
-                            ->get();
-
-            if (count($filter_list)) {
-              //Check if the any data was matched.
-                $result = array();
-                foreach ($filter_list as $filter_value) {
-                    array_push($result, (int)$filter_value->filter_list_id);
-                }
-                $result_unique=array_unique($result);
-                asort($result_unique,1);
-                DB::table(config('db_table_names.restaurant'))
-                    ->where('id', $restaurant_id)
-                    ->update(['filter_list' => implode(",",$result_unique)]);
-            } 
-            else {
-                //Log error in case of empty query (no match found with current restaurant_id)
-                Log::error('Failed  '.__METHOD__.'. No record found in restaurant table.',['restaurant_id'=>$restaurant_id]);
-                return response()->json(['Error' => config('globals.error_msg')]);        
-          }
-             
-       
-        }
-        else {
-            //Log error in case restaurant_id is blank or non-numeric
-            Log::error('Failed '.__METHOD__.'. id is not set or not numeric.',['restaurant_id'=>$restaurant_id]);
-            return response()->json(['Error' => config('globals.error_msg')]);            
-        }
-
-    }
-
-
-
     /*
     / Get the menu's associated with a particular restaurant. 
     / @param int $restaurant_id
@@ -326,7 +302,8 @@ class RestaurantDisplay extends Controller {
        
         if (isset($restaurant_id) && is_numeric($restaurant_id)) {
 
-            $query =  DB::table(config('db_table_names.menu'))     
+            $query =  DB::table(config('db_table_names.menu'))
+                        ->select('id','restaurant_id','name','description','type')     
                         ->where('restaurant_id',$restaurant_id);      
             /*
             / Exact compares the "package_type". 
@@ -353,12 +330,25 @@ class RestaurantDisplay extends Controller {
 
             }
 
-            $menu = $query->get();
+            $menus = $query->get();
 
-            if (count($menu)) {
-                  //Check if any data was fetched.
-                  return response()->json($menu);   
-            } 
+            if (count($menus)) {
+                //Check if any data was fetched.
+                  
+                foreach ($menus as $menu) {
+                    if ($menu->type != 'a-la-carte') {
+                        $pricings =  DB::table(config('db_table_names.menu_package_price'))
+                                    ->select('id','menu_id','min_pax','max_pax','price_per_person')     
+                                    ->where('menu_id',$menu->id)
+                                    ->orderBy('price_per_person','asc')
+                                    ->get();   
+                        if (count($pricings)) {
+                            $menu->pricing=$pricings;
+                        }
+                    }
+                }
+                return response()->json($menus);   
+            }
             else {
                 //Log error in case an empty set was picked up (No menu for restaurant_id)
                 Log::error('Failed '.__METHOD__.'. No record found in menu table.',['restaurant_id'=>$restaurant_id]);
